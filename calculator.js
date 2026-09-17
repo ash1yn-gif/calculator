@@ -84,11 +84,13 @@ function outputScreen(event, arr) {
     // Get the button that was clicked
     const clickedKey = event.target;
 
-    if (outputScreen.childElementCount > 20) {
+    if (outputScreen.childElementCount >= 20) {
         if (clickedKey.classList.contains("clear")) {
-            // Clear everything from the screen
-            outputScreen.innerHTML = "";
-            arr.length = 0;
+            clear(outputScreen)
+            return;
+        }
+        else if (clickedKey.classList.contains("delete")) {
+            del(outputScreen)
             return;
         }
         alert("You cannot enter more than 20 characters")
@@ -103,99 +105,29 @@ function outputScreen(event, arr) {
 
     // Check if the clicked button is a number
     if (clickedKey.classList.contains("number")) {
-
-        // If the last thing in the array is already a number,
-        // just add the new digit to that number instead of making a new element
-        if (arr.length > 0 && isDigit(arr[arr.length - 1])) {
-            console.log(arr[arr.length - 1])
-            console.log(isDigit(arr[arr.length - 1]))
-
-            // Show the clicked number on the screen
-            p.textContent = clickedKey.value;
-
-            // Add the new digit to the existing number
-            arr[arr.length - 1] += clickedKey.value;
-
-            console.log(arr);
-
-            // Add the clicked number to the screen
-            outputScreen.appendChild(p);
-        }
-        else {
-            // If there isn't already a number, make a new number in the array
-            p.textContent = clickedKey.value;
-            arr.push(clickedKey.value);
-
-            console.log(arr);
-
-            // Add it to the screen
-            outputScreen.appendChild(p);
-        }
-        
+        number(outputScreen, p, clickedKey, arr)
     }
 
     // Check if the clicked button is an operator
     else if (clickedKey.classList.contains("operator")) {
-        // Display the operator's symbol
-        p.textContent = clickedKey.textContent;
-
-        // Store the operator in the array
-        arr.push(clickedKey.value);
-
-        console.log(arr);
-
-        // Add it to the screen
-        outputScreen.appendChild(p);
+        operator(outputScreen, p, clickedKey)
     }
 
     // Check if the clear button was clicked
     else if (clickedKey.classList.contains("clear")) {
-        // Clear everything from the screen
-        outputScreen.innerHTML = "";
-
-        // Clear the array
-        arr.length = 0;
-
+        clear(outputScreen)
     }
 
     // Check if the equals button was clicked
     else if (clickedKey.classList.contains("finish")) {
-        // Calculate the expression
-        let output = higherPrecendence(arr);
-
-        // Convert the result to a number
-        output = output -'0';
-
-        // Clear the old expression from the screen
-        outputScreen.innerHTML = "";
-
-        // Round the result to 5 decimal places
-        // Number() gets rid of unnecessary trailing zeroes
-        p.textContent = Number(output.toFixed(5));
-
-        // Show the result
-        outputScreen.appendChild(p)
+        finish(outputScreen, p)
     }
 
     // Check if the delete button was clicked
     else if (clickedKey.classList.contains("delete")) {
-        // Get the current length of the array
-        const length = arr.length;
-
-        // If the last number has more than one digit,
-        // just remove the last digit
-        if (arr[length - 1].length !== 1){
-            arr[length - 1] = arr[arr.length - 1].slice(0, -1)
-        }
-
-        // If it only has one digit, remove the whole element
-        else {
-            arr.pop()
-        }
-
-        // Remove the last thing displayed on the screen
-        outputScreen.removeChild(outputScreen.lastElementChild)
+        del(outputScreen)
     }
+
     if (outputScreen.childElementCount > 12) {
         const ps = outputScreen.querySelectorAll(".output-keys")
         ps.forEach(p => {
@@ -206,6 +138,115 @@ function outputScreen(event, arr) {
 }
 
 // Check if a value contains only digits with regex
-function isDigit(value) {
-    return /^\d+$/.test(value);
+function isNumber(value) {
+    
+    return /^\d*\.?\d*$/.test(value);
+}
+
+function removeStrayOperators(arr) {
+    while (arr.length > 0 && !isNumber(arr[0])) {
+        arr.shift()
+    }
+    while (arr.length > 0 && !isNumber(arr[arr.length - 1])) {
+        arr.pop()
+    }
+}
+
+function number(outputScreen, p, clickedKey, arr) {
+    // If the last thing in the array is already a number,
+    // just add the new digit to that number instead of making a new element
+    if (arr.length > 0 && isNumber(arr[arr.length - 1])) {
+        console.log(arr[arr.length - 1])
+        console.log(isNumber(arr[arr.length - 1]))
+
+        if (arr[arr.length - 1].includes(".") && clickedKey.value === ".") {
+            return;
+        }
+
+        // Show the clicked number on the screen
+        p.textContent = clickedKey.value;
+
+        // Add the new digit to the existing number
+        arr[arr.length - 1] += clickedKey.value;
+
+        console.log(arr);
+
+        // Add the clicked number to the screen
+        outputScreen.appendChild(p);
+    }
+    else {
+        // If there isn't already a number, make a new number in the array
+        p.textContent = clickedKey.value;
+        arr.push(clickedKey.value);
+
+        console.log(arr);
+
+        // Add it to the screen
+        outputScreen.appendChild(p);
+    }
+}
+
+function operator(outputScreen, p, clickedKey) {
+    // Display the operator's symbol
+    p.textContent = clickedKey.textContent;
+
+    // Store the operator in the array
+    arr.push(clickedKey.value);
+
+    console.log(arr);
+
+    // Add it to the screen
+    outputScreen.appendChild(p);
+}
+
+function clear(outputScreen) {
+    // Clear everything from the screen
+    outputScreen.innerHTML = "";
+
+    // Clear the array
+    arr.length = 0;
+}
+
+function finish(outputScreen, p) {
+    if (arr.length <= 0) {
+        return;
+    }
+
+    removeStrayOperators(arr);
+
+    // Calculate the expression
+    let output = higherPrecendence(arr);
+
+    // Clear the old expression from the screen
+    outputScreen.innerHTML = "";   
+    output = output[0] - '0';
+    if (Number.isFinite(output)) {
+        // Round the result to 5 decimal places
+        // Number() gets rid of unnecessary trailing zeroes
+        p.textContent = Number(output.toFixed(5));
+    }
+    else {
+        output = "Undefined";
+        p.textContent = output;
+    }
+    outputScreen.appendChild(p)
+    console.log(output)
+}
+
+function del(outputScreen) {
+    const length = arr.length;
+
+    // If the last number has more than one digit,
+    // just remove the last digit
+    if (arr[length - 1].length !== 1){
+        arr[length - 1] = arr[arr.length - 1].slice(0, -1)
+    }
+
+    // If it only has one digit, remove the whole element
+    else {
+        arr.pop()
+    }
+
+    // Remove the last thing displayed on the screen
+    outputScreen.removeChild(outputScreen.lastElementChild)
 }
